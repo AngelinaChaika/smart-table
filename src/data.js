@@ -1,3 +1,5 @@
+import { checkResponse } from "./lib/utils.js";
+
 const BASE_URL = "https://webinars.webdev.education-services.ru/sp7-api";
 
 export function initData(sourceData) {
@@ -17,10 +19,15 @@ export function initData(sourceData) {
 
   const getIndexes = async () => {
     if (!sellers || !customers) {
-      [sellers, customers] = await Promise.all([
-        fetch(`${BASE_URL}/sellers`).then((res) => res.json()),
-        fetch(`${BASE_URL}/customers`).then((res) => res.json()),
-      ]);
+      try {
+        [sellers, customers] = await Promise.all([
+          fetch(`${BASE_URL}/sellers`).then(checkResponse),
+          fetch(`${BASE_URL}/customers`).then(checkResponse),
+        ]);
+      } catch (error) {
+        console.log("Ошибка в getIndexes:", error);
+        throw error;
+      }
     }
 
     return { sellers, customers };
@@ -34,8 +41,9 @@ export function initData(sourceData) {
       return lastResult;
     }
 
-    const response = await fetch(`${BASE_URL}/records?${nextQuery}`);
-    const records = await response.json();
+    const records = await fetch(`${BASE_URL}/records?${nextQuery}`).then(
+      checkResponse,
+    );
 
     lastQuery = nextQuery;
     lastResult = {
